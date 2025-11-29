@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CampusShare — Peer-to-Peer Renting</title>
+
+<style>
+  :root{
+    --bg:#0f1724;
+    --card:#0b1220;
+    --muted:#94a3b8;
+    --accent:#6ee7b7;
+    --accent-2:#60a5fa;
+    --glass: rgba(255,255,255,0.03);
+    --success:#10b981;
+    --danger:#ef4444;
+    --white:#1f3fde;
+    --max-w:1200px;
+    --radius:12px;
+    --gap:18px;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(600px 400px at 10% 10%, rgba(96,165,250,0.06), transparent 8%),
+      radial-gradient(500px 300px at 90% 90%, rgba(110,231,183,0.04), transparent 8%),
+      var(--bg);
+    color:var(--white);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:28px;
+    display:flex;
+    justify-content:center;
+    
+  }
+
+  .app {
+    width:100%;
+    max-width:var(--max-w);
+    display:grid;
+    grid-template-columns: 320px 1fr;
+    gap:24px;
+  }
+
+  /* Sidebar */
+  .sidebar{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    padding:20px;
+    border-radius:var(--radius);
+    min-height:420px;
+    box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+    border:1px solid rgba(255,255,255,0.03);
+  }
+
+  .brand{
+    display:flex;gap:12px;align-items:center;margin-bottom:18px;
+  }
+  .logo{
+    width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:#04263a;font-size:18px;
+    box-shadow:0 6px 18px rgba(96,165,250,0.08), inset 0 -6px 12px rgba(0,0,0,0.12);
+  }
+  .brand h1{font-size:16px;margin:0}
+  .brand p{margin:0;color:var(--muted);font-size:13px}
+
+  .search{
+    display:flex;gap:8px;margin-top:12px;
+  }
+  .search input{
+    flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);
+    background:var(--glass);color:var(--white);outline:none;
+  }
+  .filter{
+    margin-top:16px;
+  }
+  .filter label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+  .select, .input{
+    width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);
+    color:var(--white);outline:none;
+  }
+
+  .quick-stats{
+    display:flex;gap:12px;margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .stat{
+    flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);
+    font-size:13px;color:var(--muted)
+  }
+  .stat strong{display:block;color:var(--white);font-size:18px;margin-top:6px}
+
+  .sidebar .btn{
+    margin-top:16px;display:block;width:100%;text-align:center;padding:10px;border-radius:10px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#022b3a;font-weight:600;border:none;cursor:pointer;
+  }
+
+  /* Main area */
+  .main{
+    min-height:420px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:var(--radius);padding:20px;border:1px solid rgba(255,255,255,0.03);
+    box-shadow:0 8px 26px rgba(2,6,23,0.6);
+    display:flex;flex-direction:column;
+  }
+
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;
+  }
+  .topbar .left h2{margin:0;font-size:18px}
+  .topbar .left p{margin:0;color:var(--muted);font-size:13px}
+
+  .controls{display:flex;gap:10px;align-items:center}
+  .chip{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);font-size:13px;color:var(--muted)}
+
+  .grid{
+    display:grid;gap:18px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03);
+    display:flex;flex-direction:column;gap:10px;
+  }
+
+  .thumb{
+    height:140px;border-radius:8px;background:linear-gradient(135deg, rgba(96,165,250,0.14), rgba(110,231,183,0.06));
+    display:flex;align-items:flex-end;justify-content:flex-end;padding:10px;color:var(--white);font-weight:700;
+    position:relative;overflow:hidden;
+  }
+  .thumb .tag{position:absolute;left:10px;top:10px;background:rgba(0,0,0,0.35);padding:6px 8px;border-radius:8px;font-size:12px}
+  .thumb svg{width:100%;height:100%;opacity:0.07;position:absolute;top:0;left:0;object-fit:cover}
+
+  .title{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .title h3{margin:0;font-size:15px}
+  .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+
+  .owner{
+    display:flex;align-items:center;gap:10px;margin-top:6px;
+  }
+  .avatar{
+    width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#a7f3d0, #93c5fd);display:flex;align-items:center;justify-content:center;color:#052b3a;font-weight:700;
+    font-size:14px;
+  }
+  .owner .name{font-size:13px}
+  .verified{
+    display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:999px;background:rgba(16,185,129,0.08);color:var(--success);border:1px solid rgba(16,185,129,0.06);font-size:12px;
+  }
+
+  .price{
+    margin-top:auto;display:flex;justify-content:space-between;align-items:center;
+  }
+  .price strong{font-size:16px}
+  .action{
+    display:flex;gap:8px;
+  }
+  .btn-ghost{
+    padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--white);cursor:pointer;font-size:14px;
+  }
+  .btn-primary{
+    padding:10px 12px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#042b3a;font-weight:700;cursor:pointer;
+  }
+
+  .badge-available{background:rgba(16,185,129,0.12);color:var(--success);padding:6px 8px;border-radius:999px;font-weight:600;font-size:13px}
+  .badge-unavail{background:rgba(239,68,68,0.08);color:var(--danger);padding:6px 8px;border-radius:999px;font-weight:600;font-size:13px}
+
+  /* Modal */
+  .overlay{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+  .overlay.show{display:flex}
+  .modal{
+    width:100%;max-width:720px;background:linear-gradient(180deg,#071027, #061422);border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.04);
+  }
+  .modal .row{display:flex;gap:12px}
+  .modal .left{flex:0 0 270px}
+  .modal img{width:100%;border-radius:8px;display:block}
+  .modal h3{margin:0}
+  .checklist{margin-top:12px}
+  .checklist label{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;font-size:14px;color:var(--muted)}
+  .checklist input[type="checkbox"]{margin-top:4px}
+  .handover{
+    margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.03);
+  }
+  .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+  .small{font-size:13px;color:var(--muted)}
+
+  /* footer */
+  .footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+
+  /* Responsiveness */
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr; padding-bottom:40px}
+    .sidebar{order:2}
+  }
+
+</style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Campus P2P Renting Platform">
+    <aside class="sidebar" aria-label="Controls">
+      <div class="brand">
+        <div class="logo">CS</div>
+        <div>
+          <h1>CampusShare</h1>
+          <p>Borrow & lend inside campus — safe, verified, affordable</p>
+        </div>
+      </div>
+
+      <div class="search" role="search">
+        <input id="q" type="search" placeholder="Search items (calculator, shoes...)" aria-label="Search items" />
+        <button class="chip" onclick="clearSearch()">✕</button>
+      </div>
+
+      <div class="filter">
+        <label for="category">Category</label>
+        <select id="category" class="select" onchange="applyFilters()">
+          <option value="all">All</option>
+          <option>Electronics</option>
+          <option>Clothing</option>
+          <option>Books</option>
+          <option>Sports</option>
+          <option>Tools</option>
+        </select>
+      </div>
+
+      <div class="filter">
+        <label for="maxprice">Max price / day (₹)</label>
+        <input id="maxprice" class="input" type="number" min="0" placeholder="e.g. 50" oninput="applyFilters()" />
+      </div>
+
+      <div class="quick-stats" aria-hidden="false">
+        <div class="stat">
+          Verified lenders
+          <strong id="stat-verified">128</strong>
+        </div>
+        <div class="stat">
+          Active listings
+          <strong id="stat-listings">62</strong>
+        </div>
+        <div class="stat">
+          Avg price/day
+          <strong id="stat-price">₹42</strong>
+        </div>
+      </div>
+
+      <button class="btn" onclick="showAdd()">Lend an item</button>
+
+      <p style="margin-top:14px;color:var(--muted);font-size:13px">
+        CampusShare verifies identities through campus email and ID. Handover receipts and optional refundable deposit keep transactions safe.
+      </p>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="left">
+          <h2>Available nearby</h2>
+          <p class="small">Showing items from your department & hostel (demo data)</p>
+        </div>
+        <div class="controls">
+          <div class="chip">Sort: Price ↑</div>
+          <div class="chip">Verified only</div>
+        </div>
+      </div>
+
+      <section class="grid" id="listings" aria-live="polite">
+        <!-- Card template repeated by JS / or static demo copies -->
+        <!-- 1 -->
+        <article class="card" data-category="Electronics" data-price="25" data-available="true">
+          <div class="thumb" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2"></rect></svg>
+            <div class="tag">Scientific Calculator</div>
+          </div>
+          <div class="title">
+            <h3>Casio fx-991EX — Calculator</h3>
+            <div class="meta">
+              <span class="badge-available" title="Item is available">Available</span>
+            </div>
+          </div>
+          <div class="owner">
+            <div class="avatar">AR</div>
+            <div>
+              <div class="name">Kaushik Chaturvedi</div>
+              <div class="small">2 ratings · <span class="verified">✔ Verified</span></div>
+            </div>
+          </div>
+          <div class="price">
+            <div>
+              <div class="small">₹25 / day</div>
+              <div class="small">Deposit: ₹200</div>
+            </div>
+            <div class="action">
+              <button class="btn-ghost" onclick="previewItem(this)">Details</button>
+              <button class="btn-primary" onclick="requestBooking(this)">Request</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- 2 -->
+        <article class="card" data-category="Clothing" data-price="40" data-available="true">
+          <div class="thumb">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 3c0 0 1.5 0 3 2s3 2 3 2 1.5 0 3-2 3-2 3-2v16H6V3z"/></svg>
+            <div class="tag">Formal Shoes — Size 9</div>
+          </div>
+          <div class="title">
+            <h3>Black Oxford Shoes</h3>
+            <div class="meta">
+              <span class="badge-available">Available</span>
+            </div>
+          </div>
+          <div class="owner">
+            <div class="avatar">SM</div>
+            <div>
+              <div class="name">Sneha</div>
+              <div class="small">5 ratings · <span class="verified">✔ Verified</span></div>
+            </div>
+          </div>
+          <div class="price">
+            <div>
+              <div class="small">₹40 / day</div>
+              <div class="small">Deposit: ₹500</div>
+            </div>
+            <div class="action">
+              <button class="btn-ghost" onclick="previewItem(this)">Details</button>
+              <button class="btn-primary" disabled><a href="https://forms.gle/rKEiUGH7qEaJ7hoC8">Request</a></button>
+            </div>
+          </div>
+        </article>
+
+        <!-- 3 -->
+        <article class="card" data-category="Tools" data-price="10" data-available="false">
+          <div class="thumb">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v20M2 12h20"/></svg>
+            <div class="tag">Cycle Pump</div>
+          </div>
+          <div class="title">
+            <h3>Portable Cycle Pump</h3>
+            <div class="meta">
+              <span class="badge-unavail">Booked</span>
+            </div>
+          </div>
+          <div class="owner">
+            <div class="avatar">RK</div>
+            <div>
+              <div class="name">Randvir</div>
+              <div class="small">1 rating · <span class="verified" style="color:#cbd5e1">✔ Verified</span></div>
+            </div>
+          </div>
+          <div class="price">
+            <div>
+              <div class="small">₹10 / day</div>
+              <div class="small">Deposit: ₹50</div>
+            </div>
+            <div class="action">
+              <button class="btn-ghost" onclick="previewItem(this)">Details</button>
+              <button class="btn-primary" disabled>Request</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- 4 -->
+        <article class="card" data-category="Books" data-price="8" data-available="true">
+          <div class="thumb">
+                        <img src="C:\Webdev\Screenshot 2025-10-22 224722.png" width="100%" height="100%">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5h12v14H4zM20 7v12"/></svg>
+            <div class="tag">Engineering Math</div>
+          </div>
+          <div class="title">
+            <h3>Advance Calculus (2nd Ed.)</h3>
+
+            <div class="meta"><span class="badge-available">Available</span></div>
+          </div>
+          <div class="owner">
+            <div class="avatar">SP</div>
+            <div>
+              <div class="name">Rupam</div>
+                 <div class="small">3 ratings · <span class="verified">✔ Verified</span></div>
+            </div>
+          </div>
+          <div class="price">
+            <div>
+              <div class="small">₹8 / day</div>
+              <div class="small">Deposit: ₹100</div>
+            </div>
+            <div class="action">
+              <button class="btn-ghost" onclick="previewItem(this)">Details</button>
+              <button class="btn-primary" onclick="requestBooking(this)">Request</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- More cards could be added... -->
+      </section>
+
+      <div class="footer">All users are verified using campus email & student ID. For safety, perform handover at designated spots (library desk / hostel reception) and create a digital receipt.</div>
+    </main>
+  </div>
+
+  <!-- Modal / overlay -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document" aria-label="Item details modal">
+      <div class="row">
+        <div class="left">
+          <img id="modal-img" alt="Item image placeholder" src="" />
+        </div>
+        <div class="right" style="flex:1">
+          <h3 id="modal-title">Item title</h3>
+          <p id="modal-owner" class="small">Owner • Verified</p>
+          <div style="margin-top:8px" id="modal-desc" class="small">Description goes here.</div>
+
+          <div class="checklist" aria-label="Handover checklist">
+            <h4 style="margin:10px 0 8px 0">Safe handover checklist</h4>
+            <label><input type="checkbox" id="chk-id"> Confirm lender's student ID & campus email</label>
+            <label><input type="checkbox" id="chk-condition"> Verify item condition and photos</label>
+            <label><input type="checkbox" id="chk-receipt"> Create digital receipt (both sign)</label>
+            <label><input type="checkbox" id="chk-spot"> Choose designated handover spot (library/hostel desk)</label>
+          </div>
+
+          <div class="handover">
+            <div><strong>Price:</strong> <span id="modal-price">₹0 / day</span></div>
+            <div class="small" style="margin-top:6px">Security deposit held as refundable (released after return & inspection).</div>
+          </div>
+
+          <div class="actions">
+            <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+            <button class="btn-primary" onclick="confirmRequest()"><a href="https://forms.gle/rKEiUGH7qEaJ7hoC8">Confirm request</a></button>
+          </div>
+
+          <p class="small" style="margin-top:8px">Tip: Meet in well-lit public spaces on campus. Avoid sharing full personal contact; use in-app chat & digital receipts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Minimal JS for UI interactions (safe: no backend calls).
+  function clearSearch(){
+    document.getElementById('q').value = '';
+    applyFilters();
+  }
+
+  function applyFilters(){
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    const category = document.getElementById('category').value;
+    const maxprice = parseFloat(document.getElementById('maxprice').value || Infinity);
+    const cards = document.querySelectorAll('#listings .card');
+    let visible = 0, verifiedCount = 0, priceSum = 0, priceCount = 0;
+    cards.forEach(card=>{
+      const title = card.querySelector('h3').innerText.toLowerCase();
+      const cat = card.dataset.category || '';
+      const price = parseFloat(card.dataset.price || '0');
+      const avail = card.dataset.available === 'true';
+
+      let show = true;
+      if(q && !title.includes(q)) show = false;
+      if(category !== 'all' && cat !== category) show = false;
+      if(price > maxprice) show = false;
+
+      card.style.display = show ? 'flex' : 'none';
+      if(show){ visible++; priceSum += price; priceCount++; }
+      // a demo heuristic: verified if card contains "verified" text
+      if(show && card.innerText.includes('✔ Verified')) verifiedCount++;
+    });
+
+    document.getElementById('stat-listings').innerText = visible;
+    document.getElementById('stat-verified').innerText = verifiedCount;
+    document.getElementById('stat-price').innerText = priceCount ? '₹' + Math.round(priceSum/priceCount) : '—';
+  }
+
+  function previewItem(btn){
+    // find nearest card
+    const card = btn.closest('.card');
+    if(!card) return;
+    const title = card.querySelector('h3').innerText;
+    const owner = card.querySelector('.name').innerText;
+    const price = card.dataset.price;
+    const tag = card.querySelector('.tag') ? card.querySelector('.tag').innerText : '';
+    const img = ''; // placeholder
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-owner').innerText = owner + ' • Verified';
+    document.getElementById('modal-desc').innerText = tag + ' — Example description: gently used, pickup at hostel C.';
+    document.getElementById('modal-price').innerText = '₹' + price + ' / day';
+    document.getElementById('modal-img').src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="100%" height="100%" fill="#092135"/><text x="50%" y="50%" fill="#7dd3fc" font-size="30" dominant-baseline="middle" text-anchor="middle">' + title.replace(/&/g,'&amp;') + '</text></svg>'
+    );
+
+    openModal();
+  }
+
+  function openModal(){
+    const overlay = document.getElementById('overlay');
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+  }
+  function closeModal(){
+    const overlay = document.getElementById('overlay');
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','true');
+    // clear checklist
+    ['chk-id','chk-condition','chk-receipt','chk-spot'].forEach(id=>document.getElementById(id).checked = false);
+  }
+
+  function requestBooking(btn){
+    // preview then show modal (simulate a quick booking flow)
+    previewItem(btn.previousElementSibling);
+  }
+
+  function confirmRequest(){
+    // Basic validation: ensure checklist checked
+    if(!document.getElementById('chk-id').checked
+       || !document.getElementById('chk-condition').checked
+       || !document.getElementById('chk-receipt').checked
+       || !document.getElementById('chk-spot').checked){
+      alert('Please confirm all handover checklist items to proceed.');
+      return;
+    }
+    // In a real app we'd POST request to backend; here we simulate success
+    alert('Please Fill The Form & Thank YOU.');
+    closeModal();
+  }
+
+  function showAdd(){
+    alert('Lend-an-item flow (demo). In production this opens a secure form that requires campus email verification and item photos.');
+  }
+
+  // initial filters
+  applyFilters();
+
+  // accessibility: close modal with Esc
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') closeModal();
+  });
+</script>
+</body>
+</html>
